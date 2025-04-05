@@ -2,7 +2,7 @@ UNIX Server             External SFTP
      |                       |
 Python ETL              Python ETL (paramiko)
      |                       |
-     v                       v
+     V                       V
   GCS Raw Bucket        GCS Raw Bucket
      |                       |
      +----------+------------+
