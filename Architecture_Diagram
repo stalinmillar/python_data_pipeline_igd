@@ -1,0 +1,14 @@
+UNIX Server             External SFTP
+     |                       |
+Python ETL              Python ETL (paramiko)
+     |                       |
+     v                       v
+  GCS Raw Bucket        GCS Raw Bucket
+     |                       |
+     +----------+------------+
+                |
+        BigQuery (Staging)
+                |
+          Transformations
+                |
+        BigQuery (Data Warehouse)
