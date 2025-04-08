@@ -21,7 +21,7 @@ def ingest_sftp_data(request):
             return "File too small"
 
         storage_client = storage.Client()
-        bucket = storage_client.bucket("your-staging-bucket")
+        bucket = storage_client.bucket("staging-bucket")
         blob = bucket.blob(os.path.basename(sftp_path))
         blob.upload_from_string(data)
 
