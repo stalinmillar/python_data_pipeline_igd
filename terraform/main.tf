@@ -34,7 +34,7 @@ resource "google_bigquery_table" "master" {
     field = "date_partition_column"
   }
 }
-
+================== Daily
 resource "google_bigquery_routine" "load_to_master" {
   dataset_id = google_bigquery_dataset.raw.dataset_id
   routine_id = "load_to_master"
@@ -66,6 +66,37 @@ resource "google_bigquery_data_transfer_config" "scheduled_query" {
   }
   schedule               = "every 24 hours"
   location               = var.region
+}
+
+================Monthly
+
+resource "google_cloud_scheduler_job" "sftp_ingestion_job" {
+  name             = "sftp-data-ingestion-job"
+  description      = "Triggers SFTP ingestion Cloud Function"
+  schedule         = "0 2 1 * *" # Runs monthly on 1st at 2:00 AM
+  time_zone        = "Etc/UTC"
+
+  http_target {
+    uri          = google_cloudfunctions_function.sftp_ingest.https_trigger_url
+    http_method  = "POST"
+    oidc_token {
+      service_account_email = var.scheduler_service_account
+    }
+  }
+}
+
+resource "google_cloudfunctions_function" "sftp_ingest" {
+  name        = "sftp-ingest-function"
+  description = "Ingests monthly macroeconomic data from SFTP"
+  runtime     = "python311"
+  entry_point = "ingest_sftp_data"
+  source_archive_bucket = google_storage_bucket.staging.name
+  source_archive_object = "sftp_function.zip"
+  trigger_http = true
+  available_memory_mb = 256
+  environment_variables = {
+    PROJECT_ID = var.project_id
+  }
 }
 
 ===================Secret modules
