@@ -35,6 +35,7 @@ resource "google_bigquery_table" "master" {
   }
 }
 ================== Daily
+
 resource "google_bigquery_routine" "load_to_master" {
   dataset_id = google_bigquery_dataset.raw.dataset_id
   routine_id = "load_to_master"
@@ -68,8 +69,6 @@ resource "google_bigquery_data_transfer_config" "scheduled_query" {
   location               = var.region
 }
 
-================Monthly
-
 resource "google_cloud_scheduler_job" "sftp_ingestion_job" {
   name             = "sftp-data-ingestion-job"
   description      = "Triggers SFTP ingestion Cloud Function"
@@ -78,6 +77,21 @@ resource "google_cloud_scheduler_job" "sftp_ingestion_job" {
 
   http_target {
     uri          = google_cloudfunctions_function.sftp_ingest.https_trigger_url
+    http_method  = "POST"
+    oidc_token {
+      service_account_email = var.scheduler_service_account
+    }
+  }
+}
+
+resource "google_cloud_scheduler_job" "unix_ingestion_job" {
+  name             = "unix-data-ingestion-job"
+  description      = "Triggers UNIX transaction ingestion Cloud Function"
+  schedule         = "0 1 * * *" # Runs daily at 1:00 AM UTC
+  time_zone        = "Etc/UTC"
+
+  http_target {
+    uri          = google_cloudfunctions_function.unix_ingest.https_trigger_url
     http_method  = "POST"
     oidc_token {
       service_account_email = var.scheduler_service_account
@@ -99,7 +113,19 @@ resource "google_cloudfunctions_function" "sftp_ingest" {
   }
 }
 
-===================Secret modules
+resource "google_cloudfunctions_function" "unix_ingest" {
+  name        = "unix-ingest-function"
+  description = "Ingests daily transaction data from UNIX server"
+  runtime     = "python311"
+  entry_point = "ingest_unix_data"
+  source_archive_bucket = google_storage_bucket.staging.name
+  source_archive_object = "unix_function.zip"
+  trigger_http = true
+  available_memory_mb = 256
+  environment_variables = {
+    PROJECT_ID = var.project_id
+  }
+}===================Secret modules
 resource "google_secret_manager_secret" "sftp_username" {
   secret_id = "sftp_username"
   replication {
