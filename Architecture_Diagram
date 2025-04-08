@@ -1,11 +1,11 @@
 UNIX Server             External SFTP
      |                       |
-Python ETL              Python ETL (paramiko)
+Cloud Funcion (Python)   Cloud Function (Python)
      |                       |
      V                       V
   GCS Raw Bucket        GCS Raw Bucket
      |                       |
-     +----------+------------+
+     +----------DAG----------+
                 |
         BigQuery (Staging)
                 |
